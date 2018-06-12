@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="author" Content="li">
+    <meta name="renderer" content="webkit">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>环形进度条，条形进度条</title>
+    <style type="text/css">
+        body{
+            text-align: center;
+        }
+        div div{
+            margin: 20px 0;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="div1"></div>
+	<div class="div2"></div>
+    <div class="div3"></div>
+    <div class="div4"></div>
+    <!--需要引入raphael.js-->
+    <script src="js/jquery-1.8.3.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/raphael.min.js"></script>
+    <script>
+        window.onload=function(){
+            (function(obj){
+                obj.win={
+                    /**
+                     * 环形进度条
+                     * @param el：DOM对象
+                     * @param val:数值
+                     * @param bg:背景颜色
+                     * @param color:环颜色
+                     * @param textColor：数字颜色
+                     * @param fontSize：数字字体大小
+                     * @param size:环宽度
+                     * @param r:环内半径
+                     * @param time:动画时间
+                     * @param easing:动画类型:
+                     *  'linear'
+                     *  '<' or 'easeIn' or 'ease-in'
+                     *  '>' or 'easeOut' or 'ease-out'
+                     *  '<>' or 'easeInOut' or 'ease-in-out'
+                     *  'backIn'or 'back-in'
+                     *  'backOut' or 'back-out'
+                     *  'elastic'
+                     *  'bounce'
+                     */
+                    loopFun:function(el,val,bg,color,textColor,fontSize,size,r,time,easing){
+                        var si =r+size/2;
+                        var xy=r+size;
+                        if(val<0||val>100){
+                            return alert('请输入0~100之间的数')
+                        }
+                        var paper = Raphael(el,(r+size)*2,(r+size)*2);
+                        paper.circle(xy,xy,r).attr({
+                            'stroke-width': size,
+                            stroke:bg
+                        });
+                        paper.customAttributes.arc=function(val){
+                            var v = 360*val/100,
+                                s = -180,
+                                e = s+v,
+                                x = xy,
+                                y = xy,
+                                rad = Math.PI/180,
+                                x1 = x+r*Math.sin(-s*rad),
+                                y1 = y+r*Math.cos(-s*rad),
+                                x2 = x+r*Math.sin(-e*rad),
+                                y2 = y+r*Math.cos(-e*rad),
+                                path=[
+                                    ['M',x1,y1],
+                                    ['A',r,r,0,+(e-s>180),1,x2,y2]
+                                ];
+                            return {
+                                path:path
+                            };
+                        };
+                        var an = paper.path().attr({
+                            'stroke-width': size,
+                            stroke:color,
+                            arc: 0.01
+                        });
+                        an.animate({
+                            stroke:color,
+                            arc:val
+                        },time,easing);
+                        setTimeout(function(){
+                            if(val==100){
+                                paper.circle(xy,xy,r).attr({
+                                    'stroke-width': size,
+                                    stroke:color
+                                });
+                            }
+                        },time);
+                        paper.customAttributes.txt=function(val){
+                            return {
+                                text:Math.floor(val*100)/100+'%'
+                            }
+                        };
+                        var l = paper.text(xy,xy).attr({
+                            txt:0,
+                            'fill':textColor,
+                            'font-size':fontSize,
+                            'font-weight':700
+                        });
+                        l.animate({
+                            txt:val
+                        },time);
+                    },
+                    /**
+                     *矩形进度条
+                     * @param el：DOM对象
+                     * @param val:数值
+                     * @param bg：背景颜色
+                     * @param color：进度条颜色
+                     * @param textColor：数字颜色
+                     * @param fontSize：数字字体大小
+                     * @param lenght：进度条总长度
+                     * @param size：进度条高度
+                     * @param time：进度动画时间
+                     * @param easing:动画类型:
+                     *  'linear'
+                     *  '<' or 'easeIn' or 'ease-in'
+                     *  '>' or 'easeOut' or 'ease-out'
+                     *  '<>' or 'easeInOut' or 'ease-in-out'
+                     *  'backOut' or 'back-out'
+                     *  'bounce'
+                     */
+                    stripFun:function(el,val,bg,color,textColor,fontSize,lenght,size,time,easing){
+                        var s= size/2;
+                        if(val<0||val>100){
+                            return alert('请输入0~100之间的数')
+                        }
+                        var paper = Raphael(el,lenght,size);
+                        paper.path('M 0,'+s+' L'+lenght+','+s).attr({
+                            'stroke-width': size,
+                            stroke:bg
+                        });
+                        var strip=paper.path('M 0,'+s+' L0,'+s).attr({
+                            'stroke-width': size,
+                            stroke:color
+                        });
+                        strip.animate({
+                            path:'M 0,'+s+' L'+lenght/100*val+','+s
+                        },time,easing);
+                        paper.customAttributes.arc=function(val){
+                            return {
+                                text:Math.floor(val*100)/100+'%'
+                            }
+                        };
+                        var l = paper.text(lenght/2,s).attr({
+                            arc:0,
+                            'fill':textColor,
+                            'font-size':fontSize
+                        });
+                        l.animate({
+                            arc:val
+                        },time);
+                    }
+                };
+            })(window);
+            //不依赖jquery，第一个参数可以通过js获取DOM对象
+            //win.loopFun(document.getElementsByClassName('div1')[0],60,'#ccc','#00A0E9','#00A0E9','20px',20,60,1000,'bounce');
+            win.loopFun($('.div1')[0],60,'#ccc','#00A0E9','#00A0E9','20px',20,60,1000,'bounce');
+            win.loopFun($('.div2')[0],88.88,'#ccc','#565656','#333','20px',20,60,1000,'back-out');
+            win.stripFun($('.div3')[0],55.66,'#ccc','#00A0E9','white','14px',300,20,1000,'back-out');
+            win.stripFun($('.div4')[0],30.66,'#ccc','#00A0E9','white','14px',300,20,1000,'easeInOut');
+        }
+    </script>
+</body>
+</html>
